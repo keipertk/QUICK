@@ -48,7 +48,9 @@
 #if defined(__GNUC__)
 #include <stdint.h>
 #endif /* __GNUC__ */
-#include "cublas.h"   /* CUBLAS public header file  */
+//#include "cublas.h"   /* CUBLAS public header file  */
+#include <cuda_runtime.h>
+#include <cusolverDn.h>
 
 #define imin(a,b) (((a)<(b))?(a):(b))
 #define imax(a,b) (((a)<(b))?(b):(a))
@@ -6468,7 +6470,7 @@ void CUDA_DIAG (double* o, const double* x,double* hold,
 {
 
   int ka, kb;
-  cublasStatus stat1, stat2, stat3;
+  cublasStatus_t stat1, stat2, stat3;
   
   double* devPtr_o=0;
   double* devPtr_x=0;
@@ -6529,40 +6531,124 @@ void CUDA_DIAG (double* o, const double* x,double* hold,
         cublasFree (devPtr_hold);
         return;
     }
+
+
+    cublasHandle_t cublasH = NULL;
+    cublasStatus_t cublas_status = CUBLAS_STATUS_SUCCESS;
+    cublas_status = cublasCreate(&cublasH);
+    assert(CUBLAS_STATUS_SUCCESS == cublas_status);
+    
   // hold = o * x
 
-    cublasDgemm ('n','n', dim, dim, dim, 1.0, devPtr_o, dim,
+      cublasDgemm_v2 (cublasH, 'n','n', dim, dim, dim, 1.0, devPtr_o, dim,
                  devPtr_x, dim, 0.0, devPtr_hold, dim);
-    // DO NOT retrieve output    stat1=cublasGetMatrix(imin(*m,*ldc),*n,sizeof(C[0]),devPtrC,*ldc,C,*ldc);
+
 
     // o = x * hold
-    cublasDgemm ('n','n', dim, dim, dim, 1.0, devPtr_x, dim,
+    cublasDgemm_v2 (cublasH, 'n','n', dim, dim, dim, 1.0, devPtr_x, dim,
                  devPtr_hold, dim, 0.0, devPtr_o, dim);    
 
-    stat1=cublasGetMatrix(dim, dim, sizeof(o[0]),devPtr_o,dim,o,dim);
+
+
+    //    
+
+	      cusolverDnHandle_t cusolverH = NULL;
+	    cusolverStatus_t cusolver_status = CUSOLVER_STATUS_SUCCESS;
+
+	    cudaError_t cudaStat1 = cudaSuccess;
+	    cudaError_t cudaStat2 = cudaSuccess;
+	    cudaError_t cudaStat3 = cudaSuccess;
+
+	    //Step 1: create cusolver handle
+	    cusolver_status = cusolverDnCreate(cusolverH);
+	    assert(CUSOLVER_STATUS_SUCCESS == cusolver_status);	    
+
+
+
+	    //Step 2: Copy arrays to device
+
+  double* devPtr_E=0;
+  cudaStat1=cublasAlloc (dim, sizeof(devPtr_E), (void**)&devPtr_E);
+  assert(cudaSuccess == cudaStat1);
+
+  int* devPtr_devInfo=0;
+  cudaStat2=cublasAlloc (1, sizeof(devPtr_devInfo), (void**)&devPtr_devInfo);
+  assert(cudaSuccess == cudaStat2);
+
+  cusolverEigMode_t jobz = CUSOLVER_EIG_MODE_VECTOR;
+  cublasFillMode_t uplo = CUBLAS_FILL_MODE_UPPER;
+
+  int lwork = 0;
+
+  // Query the workspace for work buffer size
+  cusolver_status = cusolverDnDsyevd_bufferSize(
+        cusolverH,
+        jobz,
+        uplo,
+        dim,
+        devPtr_o,
+        dim,
+        devPtr_E,
+        &lwork);
+    assert (cusolver_status == CUSOLVER_STATUS_SUCCESS);
+
+    double* devPtr_work = 0;
+
+    // Allocate work space    
+    cudaStat3 = cudaMalloc((void**)&devPtr_work, sizeof(double)*lwork);
+    assert(cudaSuccess == cudaStat3);
+    
+    // Compute Spectrum
+    cusolver_status = cusolverDnDsyevd(
+        cusolverH,
+        jobz,
+        uplo,
+	dim,
+        devPtr_o,
+	dim,
+        devPtr_E,
+        devPtr_work,
+        lwork,
+        devPtr_devInfo);
+    cudaStat1 = cudaDeviceSynchronize();
+    assert(CUSOLVER_STATUS_SUCCESS == cusolver_status);
+    assert(cudaSuccess == cudaStat1);
+
+    cudaStat1 = cudaMemcpy(vec, devPtr_o, sizeof(double)*dim, cudaMemcpyDeviceToHost);
+    assert(cudaSuccess == cudaStat1);
+
+    //retriev
+    //devPtr_o contains the data that we need inside %vec array
+    /*
+    cublasDgemm ('n','n', dim, dim, dim, 1.0, devPtr_o, dim,
+                 devPtr_x, dim, 0.0, devPtr_hold, dim);
+
+
+
+    
+    
+         call cublas_DGEMM ('n', 'n', nbasis, nbasis, nbasis, 1.0d0, quick_qm_struct%x, &
+               nbasis, quick_qm_struct%vec, nbasis, 0.0d0, quick_qm_struct%co,nbasis)
+
+	   quick_qm_struct%vec -> devPtr_o
+    */
+	    
+	      
+    
+    /*        stat1=cublasGetMatrix(dim, dim, sizeof(o[0]),devPtr_o,dim,o,dim);
     if (stat1 != CUBLAS_STATUS_SUCCESS) {
         wrapperError ("Dgemm", CUBLAS_WRAPPER_ERROR_GET);
-    }
+	}*/
+
+
+
+
+
+    
     cublasFree (devPtr_o);
     cublasFree (devPtr_x);
     cublasFree (devPtr_hold);
+    cublasFree (devPtr_work);
+    cublasFree (devPtr_E);        
 
-    
-    // DO NOT retrieve output    stat1=cublasGetMatrix(imin(*m,*ldc),*n,sizeof(C[0]),devPtrC,*ldc,C,*ldc);    
-    /*    
-
-void CUBLAS_DGEMM (const char *transa, const char *transb, const int *m,
-                   const int *n, const int *k, const double *alpha,
-                   const double *A, const int *lda, const double *B,
-                   const int *ldb, const double *beta, double *C,
-                   const int *ldc)
-
-call cublas_DGEMM ('n', 'n', nbasis, nbasis, nbasis, 1.0d0, quick_qm_struct%o, &                                              
-		   nbasis, quick_qm_struct%x, nbasis, 0.0d0, quick_scratch%hold,nbasis)    
-    */
-    
-
-
-  
-  
 }
