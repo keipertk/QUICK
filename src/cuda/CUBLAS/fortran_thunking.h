@@ -520,11 +520,6 @@ void CUBLAS_ZGEMM (const char *transa, const char *transb, const int *m,
                    const cuDoubleComplex *beta, cuDoubleComplex *C, 
                    const int *ldc);
 
-  void CUDA_DIAG (double* o, const double* x, double* hold,
-		  const double* E, const double* idegen,
-		  const double* vec, const double* co,
-		  const double* V2, const int* nbasis);  
-
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */

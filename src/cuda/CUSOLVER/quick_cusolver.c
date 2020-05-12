@@ -102,34 +102,9 @@ void CUDA_DIAG (double* o, const double* x,double* hold,
   
     int dim = *nbasis;
 
-    printf("nbasis: %i", *nbasis);
-    printf("dim: %i", dim);    
-
     stat1=cublasAlloc (imax(1, dim*dim), sizeof(devPtr_o), (void**)&devPtr_o);
-
-      if(stat1 != CUBLAS_STATUS_SUCCESS)
-	{
-	  printf("dgemm1\n");
-	wrapperError("Dgemm", CUBLAS_WRAPPER_ERROR_ALLOC);
-	}        
-
     stat2=cublasAlloc (imax(1, dim*dim), sizeof(devPtr_x), (void**)&devPtr_x);
-
-      if(stat2 != CUBLAS_STATUS_SUCCESS)
-	{
-	  printf("dgemm2\n");
-	wrapperError("Dgemm", CUBLAS_WRAPPER_ERROR_SET);
-	}
-      
     stat3=cublasAlloc (dim*dim, sizeof(devPtr_hold), (void**)&devPtr_hold);
-
-      if(stat3 != CUBLAS_STATUS_SUCCESS)
-	{
-	  printf("dgemm3\n");
-	wrapperError("Dgemm", CUBLAS_WRAPPER_ERROR_SET);
-	}            
-
-
 
     if ((stat1 != CUBLAS_STATUS_SUCCESS) ||
         (stat2 != CUBLAS_STATUS_SUCCESS) ||
@@ -154,7 +129,6 @@ void CUDA_DIAG (double* o, const double* x,double* hold,
         return;
     }
 
-
     cublasHandle_t cublasH = NULL;
     cublasStatus_t cublas_status = CUBLAS_STATUS_SUCCESS;
     cublas_status = cublasCreate(&cublasH);
@@ -162,15 +136,15 @@ void CUDA_DIAG (double* o, const double* x,double* hold,
 
     const double h_one = 1;
     const double h_zero = 0;
-    
-  // hold = o * x
-      cublasDgemm_v2 (cublasH, 'n','n', dim, dim, dim, &h_one, devPtr_o, dim,
+
+      // hold = o * x
+
+            cublasDgemm_v2 (cublasH, CUBLAS_OP_N, CUBLAS_OP_N, dim, dim, dim, &h_one, devPtr_o, dim,
 		      devPtr_x, dim, &h_zero, devPtr_hold, dim);
 
-
     // o = x * hold
-      cublasDgemm_v2 (cublasH, 'n','n', dim, dim, dim, &h_one, devPtr_x, dim,
-		      devPtr_hold, dim, &h_zero, devPtr_o, dim);    
+      cublasDgemm_v2 (cublasH, CUBLAS_OP_N,CUBLAS_OP_N, dim, dim, dim, &h_one, devPtr_x, dim,
+		      devPtr_hold, dim, &h_zero, devPtr_o, dim);
 
 
 
@@ -184,26 +158,22 @@ void CUDA_DIAG (double* o, const double* x,double* hold,
 	    cudaError_t cudaStat3 = cudaSuccess;
 
 	    //Step 1: create cusolver handle
-	    cusolver_status = cusolverDnCreate(cusolverH);
+	    cusolver_status = cusolverDnCreate(&cusolverH);
+
 	    assert(CUSOLVER_STATUS_SUCCESS == cusolver_status);	    
-
-
 
 	    //Step 2: Copy arrays to device
 
   double* devPtr_E=0;
   cudaStat1=cublasAlloc (dim, sizeof(devPtr_E), (void**)&devPtr_E);
   assert(cudaSuccess == cudaStat1);
-
   int* devPtr_devInfo=0;
   cudaStat2=cublasAlloc (1, sizeof(devPtr_devInfo), (void**)&devPtr_devInfo);
   assert(cudaSuccess == cudaStat2);
-
   cusolverEigMode_t jobz = CUSOLVER_EIG_MODE_VECTOR;
   cublasFillMode_t uplo = CUBLAS_FILL_MODE_UPPER;
 
   int lwork = 0;
-
   // Query the workspace for work buffer size
   cusolver_status = cusolverDnDsyevd_bufferSize(
         cusolverH,
@@ -241,34 +211,6 @@ void CUDA_DIAG (double* o, const double* x,double* hold,
     cudaStat1 = cudaMemcpy(vec, devPtr_o, sizeof(double)*dim, cudaMemcpyDeviceToHost);
     assert(cudaSuccess == cudaStat1);
 
-    //retriev
-    //devPtr_o contains the data that we need inside %vec array
-    /*
-    cublasDgemm ('n','n', dim, dim, dim, 1.0, devPtr_o, dim,
-                 devPtr_x, dim, 0.0, devPtr_hold, dim);
-
-
-
-    
-    
-         call cublas_DGEMM ('n', 'n', nbasis, nbasis, nbasis, 1.0d0, quick_qm_struct%x, &
-               nbasis, quick_qm_struct%vec, nbasis, 0.0d0, quick_qm_struct%co,nbasis)
-
-	   quick_qm_struct%vec -> devPtr_o
-    */
-	    
-	      
-    
-    /*        stat1=cublasGetMatrix(dim, dim, sizeof(o[0]),devPtr_o,dim,o,dim);
-    if (stat1 != CUBLAS_STATUS_SUCCESS) {
-        wrapperError ("Dgemm", CUBLAS_WRAPPER_ERROR_GET);
-	}*/
-
-
-
-
-
-    
     cublasFree (devPtr_o);
     cublasFree (devPtr_x);
     cublasFree (devPtr_hold);

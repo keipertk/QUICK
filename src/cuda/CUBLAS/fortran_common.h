@@ -51,7 +51,6 @@
  *       g77 invocation may not use -fno-f2c, which forces different return 
  *       type conventions than the one used below
  */
-#define CUDA_DIAG cuda_diag_
 #define CUBLAS_INIT             cublas_init_
 #define CUBLAS_SHUTDOWN         cublas_shutdown_
 #define CUBLAS_ALLOC            cublas_alloc_
@@ -217,7 +216,6 @@
 
 #elif CUBLAS_FORTRAN_COMPILER==CUBLAS_INTEL_FORTRAN
 
-#define CUDA_DIAG cuda_diag_
 #define CUBLAS_INIT             CUBLAS_INIT 
 #define CUBLAS_SHUTDOWN         CUBLAS_SHUTDOWN
 #define CUBLAS_ALLOC            CUBLAS_ALLOC
