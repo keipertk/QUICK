@@ -49,6 +49,5 @@ extern "C" {
 		  const double* vec, const double* co,
 		  const double* V2, const int* nbasis);  
 
-#if defined(__cplusplus)
 }
 #endif /* __cplusplus */

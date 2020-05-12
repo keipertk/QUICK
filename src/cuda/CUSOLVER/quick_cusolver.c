@@ -47,11 +47,18 @@
 #include <stdlib.h>
 #if defined(__GNUC__)
 #include <stdint.h>
+#include <assert.h>
 #endif /* __GNUC__ */
-//#include "cublas.h"   /* CUBLAS public header file  */
-#include <quick_cusolver.h>
+
+#include <cublas_v2.h>
 #include <cuda_runtime.h>
 #include <cusolverDn.h>
+
+#include "quick_cusolver.h"
+#include "cusolver_fortran_common.h"
+
+
+
 
 #define imin(a,b) (((a)<(b))?(a):(b))
 #define imax(a,b) (((a)<(b))?(b):(a))
@@ -152,16 +159,18 @@ void CUDA_DIAG (double* o, const double* x,double* hold,
     cublasStatus_t cublas_status = CUBLAS_STATUS_SUCCESS;
     cublas_status = cublasCreate(&cublasH);
     assert(CUBLAS_STATUS_SUCCESS == cublas_status);
+
+    const double h_one = 1;
+    const double h_zero = 0;
     
   // hold = o * x
-
-      cublasDgemm_v2 (cublasH, 'n','n', dim, dim, dim, 1.0, devPtr_o, dim,
-                 devPtr_x, dim, 0.0, devPtr_hold, dim);
+      cublasDgemm_v2 (cublasH, 'n','n', dim, dim, dim, &h_one, devPtr_o, dim,
+		      devPtr_x, dim, &h_zero, devPtr_hold, dim);
 
 
     // o = x * hold
-    cublasDgemm_v2 (cublasH, 'n','n', dim, dim, dim, 1.0, devPtr_x, dim,
-                 devPtr_hold, dim, 0.0, devPtr_o, dim);    
+      cublasDgemm_v2 (cublasH, 'n','n', dim, dim, dim, &h_one, devPtr_x, dim,
+		      devPtr_hold, dim, &h_zero, devPtr_o, dim);    
 
 
 

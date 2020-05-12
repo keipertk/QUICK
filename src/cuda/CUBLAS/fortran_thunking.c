@@ -48,9 +48,8 @@
 #if defined(__GNUC__)
 #include <stdint.h>
 #endif /* __GNUC__ */
-//#include "cublas.h"   /* CUBLAS public header file  */
-#include <cuda_runtime.h>
-#include <cusolverDn.h>
+#include "cublas.h"   /* CUBLAS public header file  */
+
 
 #define imin(a,b) (((a)<(b))?(a):(b))
 #define imax(a,b) (((a)<(b))?(b):(a))
@@ -6462,7 +6461,7 @@ void CUBLAS_ZHER2K (const char *uplo, const char *trans, const int *n,
     cublasFree (devPtrB);
     cublasFree (devPtrC);
 }
-
+/*
 void CUDA_DIAG (double* o, const double* x,double* hold,
 		const double* E, const double* idegen,
 		const double* vec, const double* co,
@@ -6617,30 +6616,6 @@ void CUDA_DIAG (double* o, const double* x,double* hold,
     cudaStat1 = cudaMemcpy(vec, devPtr_o, sizeof(double)*dim, cudaMemcpyDeviceToHost);
     assert(cudaSuccess == cudaStat1);
 
-    //retriev
-    //devPtr_o contains the data that we need inside %vec array
-    /*
-    cublasDgemm ('n','n', dim, dim, dim, 1.0, devPtr_o, dim,
-                 devPtr_x, dim, 0.0, devPtr_hold, dim);
-
-
-
-    
-    
-         call cublas_DGEMM ('n', 'n', nbasis, nbasis, nbasis, 1.0d0, quick_qm_struct%x, &
-               nbasis, quick_qm_struct%vec, nbasis, 0.0d0, quick_qm_struct%co,nbasis)
-
-	   quick_qm_struct%vec -> devPtr_o
-    */
-	    
-	      
-    
-    /*        stat1=cublasGetMatrix(dim, dim, sizeof(o[0]),devPtr_o,dim,o,dim);
-    if (stat1 != CUBLAS_STATUS_SUCCESS) {
-        wrapperError ("Dgemm", CUBLAS_WRAPPER_ERROR_GET);
-	}*/
-
-
 
 
 
@@ -6652,3 +6627,4 @@ void CUDA_DIAG (double* o, const double* x,double* hold,
     cublasFree (devPtr_E);        
 
 }
+*/

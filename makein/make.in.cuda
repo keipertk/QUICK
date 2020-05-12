@@ -62,7 +62,7 @@ CUDA_INCL_FLAGS=-L$(CUDA_HOME)/lib64 -I$(CUDA_HOME)/include -DCUDA_SPDF
 
 # G++ Compiler
 CXX = g++
-CFLAGS = -lgfortran -L$(CUDA_HOME)/lib64 -lcuda -lm $(CUDA_LIBPATH) -lcudart -lcudadevrt -lcublas -lstdc++
+CFLAGS = -lgfortran -L$(CUDA_HOME)/lib64 -lcuda -lm $(CUDA_LIBPATH) -lcudart -lcudadevrt -lcublas -lcusolver -lstdc++
 
 
 #CUDA_SPDF=y
