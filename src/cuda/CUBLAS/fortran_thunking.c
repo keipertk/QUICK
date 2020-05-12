@@ -6461,3 +6461,83 @@ void CUBLAS_ZHER2K (const char *uplo, const char *trans, const int *n,
     cublasFree (devPtrC);
 }
 
+void CUDA_DIAG (double* o, const double* x,double* hold,
+		const double* E, const double* idegen,
+		const double* vec, const double* co,
+		const double* V2, const size_t nbasis)
+{
+  /*
+  int ka, kb;
+  cublasStatus stat1, stat2, stat3;
+  
+  double* devPtr_o=0;
+  double* devPtr_x=0;
+  double* devPtr_hold=0;
+
+    if (nbasis == 0) return;
+  
+    ka = nbasis;
+    kb = nbasis;
+
+    stat1=cublasAlloc (imax(1, nbasis*nbasis), sizeof(devPtr_o), (void**)&devPtr_o);
+    stat2=cublasAlloc (imax(1, nbasis*nbasis), sizeof(devPtr_x), (void**)&devPtr_x);
+    stat3=cublasAlloc (nbasis*nbasis, sizeof(devPtr_hold), (void**)&devPtr_hold);
+
+    if ((stat1 != CUBLAS_STATUS_SUCCESS) ||
+        (stat2 != CUBLAS_STATUS_SUCCESS) ||
+        (stat3 != CUBLAS_STATUS_SUCCESS)) {
+        wrapperError ("Dgemm", CUBLAS_WRAPPER_ERROR_ALLOC);
+        cublasFree (devPtr_o);
+        cublasFree (devPtr_x);
+	cublasFree (devPtr_hold);
+        return;
+    }    
+      stat1=cublasSetMatrix(nbasis,nbasis,sizeof(devPtr_o[0]),o,nbasis,devPtr_o,nbasis);
+      stat2=cublasSetMatrix(nbasis,nbasis,sizeof(devPtr_x[0]),x,nbasis,devPtr_x,nbasis);
+      stat3=cublasSetMatrix(nbasis,nbasis,sizeof(devPtr_hold[0]),hold,nbasis,devPtr_hold,nbasis);
+    if ((stat1 != CUBLAS_STATUS_SUCCESS) ||
+        (stat2 != CUBLAS_STATUS_SUCCESS) ||
+        (stat3 != CUBLAS_STATUS_SUCCESS)) {
+        wrapperError ("Dgemm", CUBLAS_WRAPPER_ERROR_SET);
+        cublasFree (devPtr_o);
+        cublasFree (devPtr_x);
+        cublasFree (devPtr_hold);
+        return;
+    }
+  // hold = o * x
+
+    cublasDgemm ('n','n', nbasis, nbasis, nbasis, 1.0, devPtr_o, nbasis,
+                 devPtr_x, nbasis, 0.0, devPtr_hold, nbasis);
+    // DO NOT retrieve output    stat1=cublasGetMatrix(imin(*m,*ldc),*n,sizeof(C[0]),devPtrC,*ldc,C,*ldc);
+
+    // o = x * hold
+    cublasDgemm ('n','n', nbasis, nbasis, nbasis, 1.0, devPtr_x, nbasis,
+                 devPtr_hold, nbasis, 0.0, devPtr_o, nbasis);    
+
+    stat1=cublasGetMatrix(nbasis, nbasis, sizeof(o[0]),devPtr_o,nbasis,o,nbasis);
+    if (stat1 != CUBLAS_STATUS_SUCCESS) {
+        wrapperError ("Dgemm", CUBLAS_WRAPPER_ERROR_GET);
+    }
+    cublasFree (devPtr_o);
+    cublasFree (devPtr_x);
+    cublasFree (devPtr_hold);
+
+    
+    // DO NOT retrieve output    stat1=cublasGetMatrix(imin(*m,*ldc),*n,sizeof(C[0]),devPtrC,*ldc,C,*ldc);    
+    /*    
+
+void CUBLAS_DGEMM (const char *transa, const char *transb, const int *m,
+                   const int *n, const int *k, const double *alpha,
+                   const double *A, const int *lda, const double *B,
+                   const int *ldb, const double *beta, double *C,
+                   const int *ldc)
+
+call cublas_DGEMM ('n', 'n', nbasis, nbasis, nbasis, 1.0d0, quick_qm_struct%o, &                                              
+		   nbasis, quick_qm_struct%x, nbasis, 0.0d0, quick_scratch%hold,nbasis)    
+    */
+    
+
+  //
+  
+  
+}
