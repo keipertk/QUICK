@@ -499,27 +499,22 @@ subroutine electdiis(jscf)
          ! is accomplished by calculating Transpose[X] . O . X.
          !-----------------------------------------------
 #ifdef CUDA
-
+         !kwk
+         write(*,*) "Starting cuda_diag"         
          call cuda_diag(quick_qm_struct%o, quick_qm_struct%x, quick_scratch%hold, &
               quick_qm_struct%E, quick_qm_struct%idegen, &
               quick_qm_struct%vec, quick_qm_struct%co, &
               V2, nbasis)
+         write(*,*) "Finished cuda_diag"
+
 !         
          
-!         call cublas_DGEMM ('n', 'n', nbasis, nbasis, nbasis, 1.0d0, quick_qm_struct%o, &
-!               nbasis, quick_qm_struct%x, nbasis, 0.0d0, quick_scratch%hold,nbasis)
+!         call cpu_time(timer_begin%TDiag)
+!         call DIAG(nbasis,quick_qm_struct%o,nbasis,quick_method%DMCutoff,V2,quick_qm_struct%E,&
+!               quick_qm_struct%idegen,quick_qm_struct%vec,IERROR)
+!         call cpu_time(timer_end%TDiag)         
 
-!         call cublas_DGEMM ('n', 'n', nbasis, nbasis, nbasis, 1.0d0, quick_qm_struct%x, &
-!               nbasis, quick_scratch%hold, nbasis, 0.0d0, quick_qm_struct%o,nbasis)
 
-
-         call cpu_time(timer_begin%TDiag)
-         call DIAG(nbasis,quick_qm_struct%o,nbasis,quick_method%DMCutoff,V2,quick_qm_struct%E,&
-               quick_qm_struct%idegen,quick_qm_struct%vec,IERROR)
-         call cpu_time(timer_end%TDiag)         
-
-!         call cublas_DGEMM ('n', 'n', nbasis, nbasis, nbasis, 1.0d0, quick_qm_struct%x, &
-!               nbasis, quick_qm_struct%vec, nbasis, 0.0d0, quick_qm_struct%co,nbasis)         
 #else
          call DGEMM ('n', 'n', nbasis, nbasis, nbasis, 1.0d0, quick_qm_struct%o, &
                nbasis, quick_qm_struct%x, nbasis, 0.0d0, quick_scratch%hold,nbasis)

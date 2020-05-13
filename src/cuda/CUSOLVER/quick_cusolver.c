@@ -147,8 +147,10 @@ void CUDA_DIAG (double* o, const double* x,double* hold,
 		      devPtr_hold, dim, &h_zero, devPtr_o, dim);
 
 
-
-    //    
+      //retrieve output matrix:	stat1=cublasGetMatrix(dim, dim, sizeof(o[0]), devPtr_o, dim, o, dim);
+      //
+      //
+      //      stat1=cublasGetMatrix(dim, dim, sizeof(hold[0]), devPtr_hold, dim, hold, dim);
 
 	      cusolverDnHandle_t cusolverH = NULL;
 	    cusolverStatus_t cusolver_status = CUSOLVER_STATUS_SUCCESS;
@@ -174,6 +176,8 @@ void CUDA_DIAG (double* o, const double* x,double* hold,
   cublasFillMode_t uplo = CUBLAS_FILL_MODE_UPPER;
 
   int lwork = 0;
+
+
   // Query the workspace for work buffer size
   cusolver_status = cusolverDnDsyevd_bufferSize(
         cusolverH,
@@ -186,12 +190,14 @@ void CUDA_DIAG (double* o, const double* x,double* hold,
         &lwork);
     assert (cusolver_status == CUSOLVER_STATUS_SUCCESS);
 
-    double* devPtr_work = 0;
+    printf("lwork bufferSize is: %d\n", lwork);
+
+    double* devPtr_work = NULL;
 
     // Allocate work space    
     cudaStat3 = cudaMalloc((void**)&devPtr_work, sizeof(double)*lwork);
     assert(cudaSuccess == cudaStat3);
-    
+
     // Compute Spectrum
     cusolver_status = cusolverDnDsyevd(
         cusolverH,
@@ -208,13 +214,56 @@ void CUDA_DIAG (double* o, const double* x,double* hold,
     assert(CUSOLVER_STATUS_SUCCESS == cusolver_status);
     assert(cudaSuccess == cudaStat1);
 
-    cudaStat1 = cudaMemcpy(vec, devPtr_o, sizeof(double)*dim, cudaMemcpyDeviceToHost);
-    assert(cudaSuccess == cudaStat1);
+    //kwk
 
-    cublasFree (devPtr_o);
-    cublasFree (devPtr_x);
-    cublasFree (devPtr_hold);
-    cublasFree (devPtr_work);
-    cublasFree (devPtr_E);        
+	printf("started diag copy\n");    
+        cudaStat1 = cudaMemcpy(vec, devPtr_o, sizeof(double)*dim*dim, cudaMemcpyDeviceToHost);
+        assert(cudaSuccess == cudaStat1);
+	
+	printf("finished diag copy\n");	
 
+
+    //stat1=cublasGetMatrix(dim, dim, sizeof(vec[0]), devPtr_o, dim, vec, dim);
+
+
+			  
+
+    /*
+    stat1=cublasGetMatrix(dim, dim, sizeof(o[0]), devPtr_o, dim, o, dim);
+    printf("o\n");
+    for(int i=0; i<dim*dim; i++)
+      {
+	printf("%d %f\n", i, o[i]);
+      }
+
+    stat1=cublasGetMatrix(dim, dim, sizeof(o[0]), devPtr_E, dim, o, dim);
+    printf("E\n");
+    for(int i=0; i<dim*dim; i++)
+      {
+	printf("%d %f\n", i, o[i]);
+      }
+
+    stat1=cublasGetMatrix(dim, dim, sizeof(o[0]), devPtr_work, dim, o, dim);
+    printf("work\n");
+    for(int i=0; i<dim*dim; i++)
+      {
+	printf("%d %f\n", i, o[i]);
+      }    
+    
+
+
+
+    if (devPtr_o) cudaFree(devPtr_o);
+    if (devPtr_x) cudaFree(devPtr_x);
+    if (devPtr_hold) cudaFree(devPtr_hold);
+    if (devPtr_E) cudaFree(devPtr_E);
+    if (devPtr_devInfo) cudaFree(devPtr_devInfo);
+    if (devPtr_work) cudaFree(devPtr_work);
+
+
+    if (cusolverH) cusolverDnDestroy(cusolverH);
+    if (cublasH) cublasDestroy(cublasH);
+
+    //    cudaDeviceReset();
+    */    
 }
